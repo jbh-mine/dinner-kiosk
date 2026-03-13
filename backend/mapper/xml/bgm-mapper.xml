@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="bgm">
+
+  <select id="selectActiveTracks" resultType="map">
+    SELECT * FROM bgm_tracks WHERE active=1 AND title LIKE %s ORDER BY sort_order, id
+  </select>
+
+  <select id="selectActiveTracksAll" resultType="map">
+    SELECT * FROM bgm_tracks WHERE active=1 ORDER BY sort_order, id
+  </select>
+
+  <select id="selectTrackById" resultType="map">
+    SELECT * FROM bgm_tracks WHERE id=%s AND active=1
+  </select>
+
+  <select id="selectTracksAdmin" resultType="map">
+    SELECT * FROM bgm_tracks WHERE title LIKE %s ORDER BY sort_order, id
+  </select>
+
+  <select id="selectTracksAdminAll" resultType="map">
+    SELECT * FROM bgm_tracks ORDER BY sort_order, id
+  </select>
+
+  <select id="nextTrackSortOrder" resultType="map">
+    SELECT COALESCE(MAX(sort_order),0)+1 as so FROM bgm_tracks
+  </select>
+
+  <insert id="insertTrack" resultType="map">
+    INSERT INTO bgm_tracks(title, filename, saved_name, file_size, sort_order) VALUES(%s,%s,%s,%s,%s) RETURNING id
+  </insert>
+
+  <select id="selectTrackForUpdate" resultType="map">
+    SELECT * FROM bgm_tracks WHERE id=%s
+  </select>
+
+  <update id="updateTrack">
+    UPDATE bgm_tracks SET title=%s, active=%s WHERE id=%s
+  </update>
+
+  <select id="selectTrackForDelete" resultType="map">
+    SELECT * FROM bgm_tracks WHERE id=%s
+  </select>
+
+  <delete id="deleteTrack">
+    DELETE FROM bgm_tracks WHERE id=%s
+  </delete>
+
+  <update id="reorderTrack">
+    UPDATE bgm_tracks SET sort_order=%s WHERE id=%s
+  </update>
+
+</mapper>

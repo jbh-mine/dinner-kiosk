@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="orders">
+
+  <select id="selectMemberByName" resultType="map">
+    SELECT id FROM members WHERE name=%s
+  </select>
+
+  <select id="nextMemberSortOrder" resultType="map">
+    SELECT COALESCE(MAX(sort_order),0)+1 as cnt FROM members
+  </select>
+
+  <insert id="insertMember">
+    INSERT INTO members(name,sort_order) VALUES(%s,%s)
+  </insert>
+
+  <insert id="insertOrder" resultType="map">
+    INSERT INTO orders
+      (restaurant_id,restaurant_name,orderer_name,menu_id,menu_name,addons_json,sides_json,price,note,over_limit)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    RETURNING id
+  </insert>
+
+  <select id="selectOrderById" resultType="map">
+    SELECT * FROM orders WHERE id=%s
+  </select>
+
+  <delete id="deleteOrder">
+    DELETE FROM orders WHERE id=%s
+  </delete>
+
+  <select id="selectCartItems" resultType="map">
+    SELECT * FROM cart_items WHERE session_key=%s AND status='pending' ORDER BY added_at
+  </select>
+
+  <select id="selectCartItemForUpsert" resultType="map">
+    SELECT id, qty FROM cart_items
+    WHERE session_key=%s AND menu_id=%s AND restaurant_id=%s
+      AND addons_json=%s AND sides_json=%s AND note=%s AND status='pending'
+  </select>
+
+  <update id="updateCartItemQty">
+    UPDATE cart_items SET qty=%s, updated_at=NOW() WHERE id=%s
+  </update>
+
+  <insert id="insertCartItem" resultType="map">
+    INSERT INTO cart_items
+      (session_key, orderer_name, restaurant_id, restaurant_name,
+       menu_id, menu_name, menu_emoji, price, qty,
+       addons_json, sides_json, note, status)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'pending')
+    RETURNING id
+  </insert>
+
+  <select id="selectCartItemById" resultType="map">
+    SELECT * FROM cart_items WHERE id=%s
+  </select>
+
+  <update id="removeCartItem">
+    UPDATE cart_items SET status='removed' WHERE id=%s
+  </update>
+
+  <update id="clearCartSession">
+    UPDATE cart_items SET status='removed' WHERE session_key=%s AND status='pending'
+  </update>
+
+  <select id="selectAllCartForCheckout" resultType="map">
+    SELECT * FROM cart_items WHERE session_key=%s AND status='pending'
+  </select>
+
+  <insert id="insertOrderFromCart">
+    INSERT INTO orders
+      (restaurant_id,restaurant_name,orderer_name,
+       menu_id,menu_name,addons_json,sides_json,price,note,over_limit)
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,0)
+    RETURNING id
+  </insert>
+
+  <update id="updateCartToOrdered">
+    UPDATE cart_items SET status='ordered', updated_at=NOW() WHERE id=%s
+  </update>
+
+  <delete id="resetTodayOrders">
+    DELETE FROM orders WHERE order_date=CURRENT_DATE
+  </delete>
+
+  <update id="updateDeadlineSet">
+    UPDATE deadline_settings SET active=1,deadline_dt=%s,schedule_type=%s,schedule_val=%s,set_by=%s,updated_at=NOW() WHERE id=1
+  </update>
+
+  <update id="updateDeadlineRelease">
+    UPDATE deadline_settings SET active=0,deadline_dt=NULL,schedule_type='once',schedule_val='',updated_at=NOW() WHERE id=1
+  </update>
+
+  <select id="selectDeadlineAfterUpdate" resultType="map">
+    SELECT * FROM deadline_settings WHERE id=1
+  </select>
+
+  <select id="selectUnlockRequest" resultType="map">
+    SELECT id FROM deadline_unlock_requests WHERE member_id=%s AND DATE(requested_at)=CURRENT_DATE
+  </select>
+
+  <insert id="insertUnlockRequest">
+    INSERT INTO deadline_unlock_requests (member_id, member_name) VALUES (%s,%s)
+  </insert>
+
+  <select id="selectUnlockRequests" resultType="map">
+    SELECT * FROM deadline_unlock_requests
+    ORDER BY requested_at DESC
+    LIMIT 50
+  </select>
+
+  <select id="countUnreadRequests" resultType="map">
+    SELECT COUNT(*) as cnt FROM deadline_unlock_requests WHERE is_read=0
+  </select>
+
+  <update id="markRequestsRead">
+    UPDATE deadline_unlock_requests SET is_read=1 WHERE is_read=0
+  </update>
+
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="user">
+
+  <select id="selectMemberByUsername" resultType="map">
+    SELECT * FROM members WHERE username=%s AND active=1
+  </select>
+
+  <update id="updateMemberSettings">
+    UPDATE members SET theme=%s, font_size=%s WHERE id=%s
+  </update>
+
+  <select id="selectMemberByNameAndAffiliate" resultType="map">
+    SELECT username FROM members WHERE name=%s AND affiliate LIKE %s
+  </select>
+
+  <update id="updateMemberPassword">
+    UPDATE members SET password=%s, first_login=0 WHERE id=%s
+  </update>
+
+  <select id="selectMemberForPwReset" resultType="map">
+    SELECT name FROM members WHERE id=%s
+  </select>
+
+  <update id="resetMemberPassword">
+    UPDATE members SET password=%s, first_login=1 WHERE id=%s
+  </update>
+
+  <update id="updateMemberAccount">
+    UPDATE members SET username=%s, affiliate=%s, department=%s WHERE id=%s
+  </update>
+
+  <select id="selectMenuLikeExists" resultType="map">
+    SELECT id FROM menu_likes WHERE menu_id=%s AND member_id=%s
+  </select>
+
+  <delete id="deleteMenuLike">
+    DELETE FROM menu_likes WHERE menu_id=%s AND member_id=%s
+  </delete>
+
+  <insert id="insertMenuLike">
+    INSERT INTO menu_likes(menu_id,member_id) VALUES(%s,%s) ON CONFLICT DO NOTHING
+  </insert>
+
+  <select id="selectMenuLikeCount" resultType="map">
+    SELECT COUNT(*) as cnt FROM menu_likes WHERE menu_id=%s
+  </select>
+
+  <update id="updateMenuLikeCount">
+    UPDATE menus SET like_count=%s WHERE id=%s
+  </update>
+
+  <select id="selectMyLikes" resultType="map">
+    SELECT ml.menu_id, m.name as menu_name, m.emoji, m.price,
+           r.id as restaurant_id, r.name as restaurant_name
+    FROM menu_likes ml
+    JOIN menus m ON m.id = ml.menu_id
+    JOIN restaurants r ON r.id = m.restaurant_id
+    WHERE ml.member_id=%s ORDER BY ml.liked_at DESC
+  </select>
+
+  <select id="selectLikeCounts" resultType="map">
+    SELECT menu_id, COUNT(*) as cnt FROM menu_likes GROUP BY menu_id
+  </select>
+
+</mapper>

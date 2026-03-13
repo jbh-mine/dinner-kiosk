@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="public">
+
+  <select id="selectOrders" resultType="map">
+    SELECT * FROM orders
+    ORDER BY order_date DESC, ordered_at DESC
+  </select>
+
+  <select id="selectDistinctRestaurants" resultType="map">
+    SELECT DISTINCT restaurant_name FROM orders ORDER BY restaurant_name
+  </select>
+
+  <select id="selectDistinctMenus" resultType="map">
+    SELECT DISTINCT menu_name FROM orders ORDER BY menu_name
+  </select>
+
+  <select id="selectDistinctOrderers" resultType="map">
+    SELECT DISTINCT orderer_name FROM orders ORDER BY orderer_name
+  </select>
+
+  <select id="selectRestaurantsForPopular" resultType="map">
+    SELECT id, name, emoji, color FROM restaurants ORDER BY sort_order
+  </select>
+
+  <select id="selectPopularMenus" resultType="map">
+    SELECT m.id as mid, m.name as menu_name, m.emoji, m.price,
+           m.tag, m.description, COUNT(o.id) as cnt
+    FROM orders o
+    JOIN menus m ON m.id = o.menu_id
+    WHERE o.restaurant_id = %s AND m.available = 1
+    GROUP BY m.id ORDER BY cnt DESC LIMIT 5
+  </select>
+
+  <select id="selectAvailableMenus" resultType="map">
+    SELECT id as mid, name as menu_name, emoji, price, tag, description
+    FROM menus WHERE restaurant_id=%s AND available=1
+  </select>
+
+</mapper>
