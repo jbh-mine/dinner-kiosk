@@ -1,0 +1,1 @@
+# Dinner Kiosk System\n\nDinner kiosk ordering system with MyBatis-style SQL Mapper for PostgreSQL.\n"
