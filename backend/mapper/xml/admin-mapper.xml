@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="admin">
+
+    <!-- ════════════════════════════════════════════════
+         조직 (ORGS)
+         ════════════════════════════════════════════════ -->
+    <select id="selectOrgs">
+        SELECT id, name, parent_id, sort_order FROM orgs ORDER BY sort_order, id
+    </select>
+
+    <select id="selectOrgMembers">
+        SELECT id, name, org_id, active FROM members ORDER BY sort_order, id
+    </select>
+
+    <select id="nextOrgSortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so
+        FROM orgs WHERE parent_id IS NOT DISTINCT FROM %s
+    </select>
+
+    <insert id="insertOrg">
+        INSERT INTO orgs(name, parent_id, sort_order) VALUES(%s,%s,%s) RETURNING id
+    </insert>
+
+    <update id="updateOrgName">
+        UPDATE orgs SET name=%s WHERE id=%s
+    </update>
+
+    <update id="clearOrgMembers">
+        UPDATE members SET org_id=NULL WHERE org_id=%s
+    </update>
+
+    <delete id="deleteOrg">
+        DELETE FROM orgs WHERE id=%s
+    </delete>
+
+    <update id="reorderOrg">
+        UPDATE orgs SET sort_order=%s WHERE id=%s
+    </update>
+
+    <update id="setMemberOrg">
+        UPDATE members SET org_id=%s WHERE id=%s
+    </update>
+
+    <!-- ════════════════════════════════════════════════
+         주문자 (MEMBERS)
+         ════════════════════════════════════════════════ -->
+    <select id="selectMembersWithOrg">
+        SELECT m.*, o.name as org_name
+        FROM members m
+        LEFT JOIN orgs o ON o.id = m.org_id
+        ORDER BY m.sort_order, m.id
+    </select>
+
+    <select id="selectMemberTodayOrders">
+        SELECT menu_name, restaurant_name, price
+        FROM orders WHERE orderer_name=%s AND order_date=CURRENT_DATE
+        ORDER BY ordered_at
+    </select>
+
+    <select id="countMemberTotalOrders">
+        SELECT COUNT(*) as cnt FROM orders WHERE orderer_name=%s
+    </select>
+
+    <select id="selectMemberByName">
+        SELECT id FROM members WHERE name=%s
+    </select>
+
+    <select id="nextMemberSortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM members
+    </select>
+
+    <insert id="insertMember">
+        INSERT INTO members(name,sort_order,active,work_location) VALUES(%s,%s,1,%s)
+    </insert>
+
+    <select id="selectMemberForUpdate">
+        SELECT * FROM members WHERE id=%s
+    </select>
+
+    <update id="updateMemberActive">
+        UPDATE members SET active=%s WHERE id=%s
+    </update>
+
+    <select id="selectDuplicateMemberName">
+        SELECT id FROM members WHERE name=%s AND id!=%s
+    </select>
+
+    <update id="updateOrdererName">
+        UPDATE orders SET orderer_name=%s WHERE orderer_name=%s
+    </update>
+
+    <update id="updateMember">
+        UPDATE members SET name=%s, active=%s, work_location=%s WHERE id=%s
+    </update>
+
+    <delete id="deleteMember">
+        DELETE FROM members WHERE id=%s
+    </delete>
+
+    <update id="reorderMember">
+        UPDATE members SET sort_order=%s WHERE id=%s
+    </update>
+
+    <!-- RESTAURANTS / MENUS / ADDONS / SIDES -->
+    <select id="selectActiveRestaurants">
+        SELECT * FROM restaurants WHERE active=1 ORDER BY sort_order
+    </select>
+
+    <select id="selectMenuCategoriesForRest">
+        SELECT * FROM menu_categories WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectMenusForCategory">
+        SELECT * FROM menus WHERE restaurant_id=%s AND category_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectAddonsForRest">
+        SELECT * FROM addons WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectSidesForRest">
+        SELECT * FROM sides WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <insert id="insertRestaurant">
+        INSERT INTO restaurants(name,emoji,type,color) VALUES(%s,%s,%s,%s) RETURNING id
+    </insert>
+
+    <update id="updateRestaurant">
+        UPDATE restaurants SET name=%s,emoji=%s,type=%s,phone=%s,hours=%s,
+               price_limit=%s,address=%s,note=%s,color=%s,order_disabled=%s,
+               holiday_days=%s,updated_at=NOW()
+        WHERE id=%s
+    </update>
+
+    <update id="deactivateRestaurant">
+        UPDATE restaurants SET active=0 WHERE id=%s
+    </update>
+
+    <update id="updateHolidayDays">
+        UPDATE restaurants SET holiday_days=%s,updated_at=NOW() WHERE id=%s
+    </update>
+
+    <!-- MENU -->
+    <select id="nextMenuSortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM menus WHERE restaurant_id=%s
+    </select>
+
+    <insert id="insertMenu">
+        INSERT INTO menus(restaurant_id,category_id,name,price,emoji,description,tag,sort_order)
+        VALUES(%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
+    </insert>
+
+    <update id="updateMenuAvailable">
+        UPDATE menus SET available=%s,updated_at=NOW() WHERE id=%s
+    </update>
+
+    <update id="updateMenuFull">
+        UPDATE menus SET name=%s,price=%s,emoji=%s,description=%s,tag=%s,
+               available=%s,updated_at=NOW()
+        WHERE id=%s
+    </update>
+
+    <delete id="deleteMenu">
+        DELETE FROM menus WHERE id=%s
+    </delete>
+
+    <update id="reorderMenu">
+        UPDATE menus SET sort_order=%s WHERE id=%s
+    </update>
+
+    <!-- ADDONS -->
+    <select id="selectAddonCategory">
+        SELECT id FROM addon_categories WHERE restaurant_id=%s AND name=%s
+    </select>
+
+    <select id="nextAddonCategorySortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM addon_categories WHERE restaurant_id=%s
+    </select>
+
+    <insert id="insertAddonCategory">
+        INSERT INTO addon_categories(restaurant_id,name,sort_order) VALUES(%s,%s,%s) RETURNING id
+    </insert>
+
+    <select id="nextAddonSortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM addons WHERE restaurant_id=%s
+    </select>
+
+    <insert id="insertAddon">
+        INSERT INTO addons(restaurant_id,category_id,name,extra_price,sort_order) VALUES(%s,%s,%s,%s,%s)
+    </insert>
+
+    <update id="updateAddon">
+        UPDATE addons SET name=%s,extra_price=%s WHERE id=%s
+    </update>
+
+    <delete id="deleteAddon">
+        DELETE FROM addons WHERE id=%s
+    </delete>
+
+    <!-- SIDES -->
+    <select id="selectSideCategory">
+        SELECT id FROM side_categories WHERE restaurant_id=%s AND name=%s
+    </select>
+
+    <select id="nextSideCategorySortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM side_categories WHERE restaurant_id=%s
+    </select>
+
+    <insert id="insertSideCategory">
+        INSERT INTO side_categories(restaurant_id,name,sort_order) VALUES(%s,%s,%s) RETURNING id
+    </insert>
+
+    <select id="nextSideSortOrder">
+        SELECT COALESCE(MAX(sort_order),0)+1 as next_so FROM sides WHERE restaurant_id=%s
+    </select>
+
+    <insert id="insertSide">
+        INSERT INTO sides(restaurant_id,category_id,name,extra_price,sort_order) VALUES(%s,%s,%s,%s,%s)
+    </insert>
+
+    <update id="updateSide">
+        UPDATE sides SET name=%s,extra_price=%s WHERE id=%s
+    </update>
+
+    <delete id="deleteSide">
+        DELETE FROM sides WHERE id=%s
+    </delete>
+
+</mapper>

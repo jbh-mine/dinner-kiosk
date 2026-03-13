@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="helpers">
+
+    <!-- ── 식당 ────────────────────────── -->
+    <select id="selectRestaurants">
+        SELECT * FROM restaurants WHERE active=1 ORDER BY sort_order
+    </select>
+
+    <select id="countRestaurantTodayOrders">
+        SELECT COUNT(*) as cnt FROM orders
+        WHERE restaurant_id=%s AND order_date=CURRENT_DATE
+    </select>
+
+    <!-- ── 메뉴 카테고리/메뉴 ─────────────── -->
+    <select id="selectMenuCategories">
+        SELECT * FROM menu_categories WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectMenusByCategory">
+        SELECT * FROM menus
+        WHERE restaurant_id=%s AND category_id=%s AND available=1
+        ORDER BY sort_order
+    </select>
+
+    <select id="selectUncategorizedMenus">
+        SELECT * FROM menus
+        WHERE restaurant_id=%s AND category_id IS NULL AND available=1
+        ORDER BY sort_order
+    </select>
+
+    <select id="selectMenusByCategoryAdmin">
+        SELECT * FROM menus
+        WHERE restaurant_id=%s AND category_id=%s
+        ORDER BY sort_order
+    </select>
+
+    <!-- ── 추가옵션 ─────────────────────── -->
+    <select id="selectAddonCategories">
+        SELECT * FROM addon_categories WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectAddonsByCategory">
+        SELECT * FROM addons
+        WHERE restaurant_id=%s AND category_id=%s AND available=1
+        ORDER BY sort_order
+    </select>
+
+    <select id="selectUncategorizedAddons">
+        SELECT * FROM addons
+        WHERE restaurant_id=%s AND category_id IS NULL AND available=1
+        ORDER BY sort_order
+    </select>
+
+    <!-- ── 사이드 ──────────────────────── -->
+    <select id="selectSideCategories">
+        SELECT * FROM side_categories WHERE restaurant_id=%s ORDER BY sort_order
+    </select>
+
+    <select id="selectSidesByCategory">
+        SELECT * FROM sides
+        WHERE restaurant_id=%s AND category_id=%s AND available=1
+        ORDER BY sort_order
+    </select>
+
+    <!-- ── 주문자 ───────────────────────── -->
+    <select id="selectActiveMembers">
+        SELECT name FROM members WHERE active=1 ORDER BY sort_order, id
+    </select>
+
+    <select id="selectAllMembers">
+        SELECT name FROM members ORDER BY sort_order, id
+    </select>
+
+    <!-- ── 주문 ────────────────────────── -->
+    <select id="selectTodayOrders">
+        SELECT * FROM orders WHERE order_date=CURRENT_DATE ORDER BY ordered_at
+    </select>
+
+    <!-- ── 마감 설정 ───────────────────── -->
+    <select id="selectDeadlineSettings">
+        SELECT * FROM deadline_settings WHERE id=1
+    </select>
+
+    <!-- ── 사용자 ───────────────────────── -->
+    <select id="selectMemberById">
+        SELECT * FROM members WHERE id=%s
+    </select>
+
+</mapper>

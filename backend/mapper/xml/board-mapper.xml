@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<mapper namespace="board">
+
+  <!-- Public Category Queries -->
+  <select id="selectCategories" resultType="map">
+    SELECT * FROM board_categories WHERE active=1 ORDER BY sort_order
+  </select>
+
+  <select id="selectCategoryBySlug" resultType="map">
+    SELECT * FROM board_categories WHERE slug=%s AND active=1
+  </select>
+
+  <!-- Public Post Queries with Counts -->
+  <select id="selectPostsWithCounts" resultType="map">
+    SELECT p.*,
+           (SELECT COUNT(*) FROM board_attachments WHERE post_id=p.id) AS attach_count,
+           (SELECT COUNT(*) FROM board_comments WHERE post_id=p.id AND is_deleted=0) AS comment_count
+    FROM board_posts p
+    WHERE p.category_id=%s AND p.is_deleted=0
+    ORDER BY p.is_pinned DESC, p.created_at DESC
+    LIMIT %s OFFSET %s
+  </select>
+
+  <select id="countPostsByCategory" resultType="map">
+    SELECT COUNT(*) as cnt FROM board_posts WHERE category_id=%s AND is_deleted=0
+  </select>
+
+  <!-- Post Detail -->
+  <select id="selectPostById" resultType="map">
+    SELECT * FROM board_posts WHERE id=%s AND is_deleted=0
+  </select>
+
+  <update id="incrementViewCount">
+    UPDATE board_posts SET view_count=view_count+1 WHERE id=%s
+  </update>
+
+  <!-- Attachments -->
+  <select id="selectPostAttachments" resultType="map">
+    SELECT id, filename, file_size, mime_type, created_at FROM board_attachments WHERE post_id=%s
+  </select>
+
+  <!-- Create Post -->
+  <insert id="insertPost" resultType="map">
+    INSERT INTO board_posts (category_id, author_id, author_name, is_admin, title, content, is_pinned)
+    VALUES (%s,%s,%s,%s,%s,%s,%s)
+    RETURNING id
+  </insert>
+
+  <insert id="insertAttachment">
+    INSERT INTO board_attachments (post_id, filename, saved_name, file_size, mime_type)
+    VALUES (%s,%s,%s,%s,%s)
+  </insert>
+
+  <!-- Update Post -->
+  <select id="selectPostForUpdate" resultType="map">
+    SELECT * FROM board_posts WHERE id=%s AND is_deleted=0
+  </select>
+
+  <update id="updatePost">
+    UPDATE board_posts SET title=%s, content=%s, is_pinned=%s,
+           updated_at=NOW()
+    WHERE id=%s
+  </update>
+
+  <!-- Delete Post Attachment -->
+  <select id="selectAttachmentForDelete" resultType="map">
+    SELECT saved_name FROM board_attachments WHERE id=%s AND post_id=%s
+  </select>
+
+  <delete id="deleteAttachment">
+    DELETE FROM board_attachments WHERE id=%s
+  </delete>
+
+  <!-- Soft Delete Post -->
+  <update id="softDeletePost">
+    UPDATE board_posts SET is_deleted=1 WHERE id=%s
+  </update>
+
+  <!-- Download Attachment -->
+  <select id="selectAttachmentForDownload" resultType="map">
+    SELECT * FROM board_attachments WHERE id=%s AND post_id=%s
+  </select>
+
+  <!-- Admin Category Queries -->
+  <select id="selectAllCategories" resultType="map">
+    SELECT * FROM board_categories ORDER BY sort_order
+  </select>
+
+  <select id="maxCategorySortOrder" resultType="map">
+    SELECT COALESCE(MAX(sort_order),0)+1 as max_so FROM board_categories
+  </select>
+
+  <insert id="insertCategory" resultType="map">
+    INSERT INTO board_categories (name, slug, description, icon, allow_write, sort_order)
+    VALUES (%s,%s,%s,%s,%s,%s)
+    RETURNING id
+  </insert>
+
+  <update id="updateCategory">
+    UPDATE board_categories
+    SET name=%s, slug=%s, description=%s, icon=%s, allow_write=%s, active=%s, sort_order=%s
+    WHERE id=%s
+  </update>
+
+  <delete id="deleteCategory">
+    DELETE FROM board_categories WHERE id=%s
+  </delete>
+
+  <!-- Admin Post Queries -->
+  <select id="selectPostsAdmin" resultType="map">
+    SELECT p.*, c.name AS category_name,
+           (SELECT COUNT(*) FROM board_attachments WHERE post_id=p.id) AS attach_count
+    FROM board_posts p
+    JOIN board_categories c ON c.id=p.category_id
+    WHERE p.is_deleted=0
+    ORDER BY p.created_at DESC
+    LIMIT %s OFFSET %s
+  </select>
+
+  <select id="countPostsAdmin" resultType="map">
+    SELECT COUNT(*) as cnt FROM board_posts p WHERE p.is_deleted=0
+  </select>
+
+  <update id="softDeletePostAdmin">
+    UPDATE board_posts SET is_deleted=1 WHERE id=%s
+  </update>
+
+  <update id="pinPost">
+    UPDATE board_posts SET is_pinned=%s WHERE id=%s
+  </update>
+
+  <!-- Comment Queries -->
+  <select id="selectComments" resultType="map">
+    SELECT * FROM board_comments
+    WHERE post_id=%s AND is_deleted=0
+    ORDER BY created_at ASC
+  </select>
+
+  <select id="selectPostExists" resultType="map">
+    SELECT id FROM board_posts WHERE id=%s AND is_deleted=0
+  </select>
+
+  <insert id="insertComment" resultType="map">
+    INSERT INTO board_comments (post_id, author_id, author_name, is_admin, content)
+    VALUES (%s,%s,%s,%s,%s)
+    RETURNING id
+  </insert>
+
+  <select id="selectCommentById" resultType="map">
+    SELECT * FROM board_comments WHERE id=%s
+  </select>
+
+  <select id="selectCommentForUpdate" resultType="map">
+    SELECT * FROM board_comments WHERE id=%s AND is_deleted=0
+  </select>
+
+  <update id="updateComment">
+    UPDATE board_comments SET content=%s, updated_at=NOW()
+    WHERE id=%s
+  </update>
+
+  <select id="selectCommentForDelete" resultType="map">
+    SELECT * FROM board_comments WHERE id=%s AND is_deleted=0
+  </select>
+
+  <update id="softDeleteComment">
+    UPDATE board_comments SET is_deleted=1 WHERE id=%s
+  </update>
+
+</mapper>
